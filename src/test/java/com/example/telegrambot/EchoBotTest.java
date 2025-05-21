@@ -4,9 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Chat;
-import org.telegram.telegrambots.meta.api.objects.Message;
+// Attempting to import from potential sub-packages
+import org.telegram.telegrambots.meta.api.objects.chat.Chat; 
+import org.telegram.telegrambots.meta.api.objects.message.Message; 
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethod; // For casting the result
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,29 +20,35 @@ public class EchoBotTest {
     private EchoBot echoBot;
     private final String botUsername = "testuser";
     private final String botToken = "testtoken";
+    private final String botPath = "testpath"; // Added for new constructor
 
     @BeforeEach
     public void setUp() {
-        echoBot = new EchoBot(botUsername, botToken);
+        // Updated constructor call
+        echoBot = new EchoBot(botUsername, botToken, botPath); 
     }
 
     @Test
-    public void testOnWebhookUpdateReceived_validTextMessage() {
+    // Renamed method from testOnWebhookUpdateReceived_validTextMessage to testConsumeUpdate_validTextMessage
+    public void testConsumeUpdate_validTextMessage() { 
         // Mock Update object
         Update update = Mockito.mock(Update.class);
-        Message message = Mockito.mock(Message.class);
-        Chat chat = Mockito.mock(Chat.class);
+        org.telegram.telegrambots.meta.api.objects.message.Message message = Mockito.mock(org.telegram.telegrambots.meta.api.objects.message.Message.class);
+        org.telegram.telegrambots.meta.api.objects.chat.Chat chat = Mockito.mock(org.telegram.telegrambots.meta.api.objects.chat.Chat.class);
 
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
         when(message.hasText()).thenReturn(true);
         when(message.getText()).thenReturn("Hello Bot");
         when(message.getChatId()).thenReturn(123L);
-        when(message.getChat()).thenReturn(chat); // Although not directly used by current EchoBot, good for completeness
-        when(chat.getId()).thenReturn(123L);
+        // when(message.getChat()).thenReturn(chat); // Not strictly needed if ChatId is directly used
+        // when(chat.getId()).thenReturn(123L); // Not strictly needed
 
-
-        SendMessage response = (SendMessage) echoBot.onWebhookUpdateReceived(update);
+        // Renamed method call and cast to BotApiMethod then to SendMessage
+        BotApiMethod<?> apiMethod = echoBot.consumeUpdate(update); 
+        assertNotNull(apiMethod);
+        assertEquals(SendMessage.class, apiMethod.getClass());
+        SendMessage response = (SendMessage) apiMethod;
 
         assertNotNull(response);
         assertEquals("123", response.getChatId());
@@ -48,23 +56,27 @@ public class EchoBotTest {
     }
 
     @Test
-    public void testOnWebhookUpdateReceived_noMessage() {
+    // Renamed method from testOnWebhookUpdateReceived_noMessage to testConsumeUpdate_noMessage
+    public void testConsumeUpdate_noMessage() { 
         Update update = Mockito.mock(Update.class);
         when(update.hasMessage()).thenReturn(false);
 
-        assertNull(echoBot.onWebhookUpdateReceived(update));
+        // Renamed method call
+        assertNull(echoBot.consumeUpdate(update)); 
     }
 
     @Test
-    public void testOnWebhookUpdateReceived_messageNoText() {
+    // Renamed method from testOnWebhookUpdateReceived_messageNoText to testConsumeUpdate_messageNoText
+    public void testConsumeUpdate_messageNoText() { 
         Update update = Mockito.mock(Update.class);
-        Message message = Mockito.mock(Message.class);
+        org.telegram.telegrambots.meta.api.objects.message.Message message = Mockito.mock(org.telegram.telegrambots.meta.api.objects.message.Message.class);
 
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
         when(message.hasText()).thenReturn(false);
 
-        assertNull(echoBot.onWebhookUpdateReceived(update));
+        // Renamed method call
+        assertNull(echoBot.consumeUpdate(update)); 
     }
     
     @Test
@@ -79,6 +91,7 @@ public class EchoBotTest {
 
     @Test
     public void testGetBotPath() {
-        assertNull(echoBot.getBotPath());
+        // Now expects the botPath provided in constructor
+        assertEquals(botPath, echoBot.getBotPath()); 
     }
 }
